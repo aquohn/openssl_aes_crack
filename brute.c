@@ -20,7 +20,8 @@
 #  define _SIZETF "zu"
 #endif
 
-//int lalpha_crack(char *pass, int len);
+int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv);
+int lalpha_crack(char *pass, const int len, int rpos);
 void cleanup(char *ct, char *pt);
 
 int main(int argc, char *argv[])
@@ -38,9 +39,32 @@ int main(int argc, char *argv[])
 
   printf("Crypto setup done\n");
 
+  char *ct = NULL;
+  char *pt = NULL;
+  size_t *ct_size;
+  *ct_size = 1024;
+  if (!buffer_setup(ct, pt, ct_size, argc, argv)) {
+    cleanup(ct, pt);
+    return 1;
+  }
+  
+  printf("Buffer setup done\n");
+
+
+  /* ... Do some crypto stuff here ... */
+
+  char pass[] = {'a', 'a', 'a', 'a', 'a'};
+  lalpha_crack(pass, 5, 5);
+
+
+  cleanup(ct, pt);
+  return 0;
+}
+
+int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
+
   /* Set up buffers and do IO stuff */
 
-  size_t ct_size = 1024;
   FILE *ct_fp = NULL;
   char *ct_str = NULL;
   int opt;
@@ -48,12 +72,12 @@ int main(int argc, char *argv[])
   while ((opt = getopt(argc, argv, ":c:f:s:")) != -1) {
     switch(opt) {
       case 's':
-        if (sscanf(optarg, "%" _SIZETF, &ct_size) == 0) {
+        if (sscanf(optarg, "%" _SIZETF, ct_size) == 0) {
           printf("Please provide a valid ciphertext size!\n");
-          return 1;
-        } else if (ct_size == SIZE_MAX) {
+          return 0;
+        } else if (*ct_size == SIZE_MAX) {
           printf("Ciphertext too large!\n");
-          return 1;
+          return 0;
         }
         break;
 
@@ -69,14 +93,14 @@ int main(int argc, char *argv[])
 
       case ':':
         printf("Argument required for -%c!\n", optopt);
-        return 1;
+        return 0;
         break;
 
       case '?':
         printf("Use -c to supply a base64 ciphertext or -f to specify a file"
             " containing a base64 ciphertext, and use -s to specify the size of"
-            " the ciphertext (default 1MB). The first string is read and"
-            " leading and trailing whitespace are stripped.\n");
+            " the ciphertext (default 1MB). Only the first line is read from a"
+            " file.\n");
         break;
     }
   }
@@ -85,42 +109,38 @@ int main(int argc, char *argv[])
 
   int bufdone = 0;
 
-  char *ct = malloc((ct_size + 1) * sizeof(char));
-  char *pt = malloc((ct_size + 1) * sizeof(char));
+  ct = malloc((*ct_size + 1) * sizeof(char));
+  pt = malloc((*ct_size + 1) * sizeof(char));
 
   if (ct_fp != NULL && ct_str != NULL) {
     printf("Please supply only one ciphertext!");
   } else if (ct_fp != NULL) {
-    if (fgets(ct, ct_size, ct_fp) == NULL) {
+    if (fgets(ct, *ct_size, ct_fp) == NULL) {
       printf("Failed to read ciphertext from file! Error code %d.\n",
           ferror(ct_fp));
     } else {
       bufdone = 1;
     }
   } else if (ct_str != NULL) {
-      strncpy(ct, ct_str, ct_size);
-      bufdone = 1;
-    }
+    strncpy(ct, ct_str, *ct_size);
+    bufdone = 1;
   } else {
     printf("No ciphertext to decrypt!\n");
   }
 
   if (bufdone) {
-    ct[ct_size] = '0';
+    ct[*ct_size] = '0';
+    return 1;
   } else {
     cleanup(ct, pt);
-    return 1;
+    return 0;
   }
+}
 
-  printf("Buffer setup done\n");
-
-  /* ... Do some crypto stuff here ... */
-
-  char pass[] = {'a', 'a', 'a', 'a', 'a'};
-  //lalpha_crack(pass, 5);
-
-  
-  cleanup(ct, pt);
+int lalpha_crack(char *pass, const int len, int rpos) {
+  if (rpos == 1) {
+    
+  }
   return 0;
 }
 
@@ -136,8 +156,6 @@ void cleanup(char *ct, char *pt) {
   /* Remove error strings */
   ERR_free_strings();
 
-  free(ct);
-  free(pt);
+  if (ct) free(ct);
+  if (pt) free(pt);
 }
-
-
