@@ -20,7 +20,7 @@
 #  define _SIZETF "zu"
 #endif
 
-//int lalpha_crack(char *pass, int len);
+int lalpha_crack(char *pass, int pos, const int len);
 void cleanup(char *ct, char *pt);
 
 int main(int argc, char *argv[])
@@ -115,12 +115,29 @@ int main(int argc, char *argv[])
 
   /* ... Do some crypto stuff here ... */
 
-  char pass[] = {'a', 'a', 'a', 'a', 'a'};
-  //lalpha_crack(pass, 5);
+  char pass[] = {'a', 'a', 'a', 'a', 'a', '0'};
+  lalpha_crack(pass, 5, 5);
 
 
   cleanup(ct, pt);
   return 0;
+}
+
+int lalpha_crack(char *pass, int pos, const int len) {
+  if (len - pos == 1) { // base case
+    printf("%s\n", pass); // replace with decryption later, return 1 on success
+    return 0;
+  } else {
+    if (lalpha_crack(pass, pos + 1, len)) {
+      return 1;
+    } else if (pass[pos] == 'z') {
+      pass[pos] = 'a';     
+      return 0;
+    } else {
+      ++pass[pos];
+      return lalpha_crack(pass, pos, len);
+    }
+  }
 }
 
 void cleanup(char *ct, char *pt) {
