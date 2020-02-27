@@ -10,6 +10,8 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include <time.h>
+
 #ifdef _WIN32
 #  ifdef _WIN64
 #    define _SIZETF PRIu64
@@ -22,6 +24,7 @@
 
 int lalpha_crack(char *pass, int pos, const int len);
 void cleanup(char *ct, char *pt);
+FILE *out = NULL;
 
 int main(int argc, char *argv[])
 { 
@@ -117,8 +120,12 @@ int main(int argc, char *argv[])
   /* ... Do some crypto stuff here ... */
 
   char pass[] = {'a', 'a', 'a', 'a', 'a', 0};
+  out = fopen("out.txt", "w");
+  clock_t begin, end;
+  begin = clock();
   lalpha_crack(pass, 0, 5);
-
+  end = clock();
+  printf("Took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
 
   cleanup(ct, pt);
   return 0;
@@ -126,7 +133,7 @@ int main(int argc, char *argv[])
 
 int lalpha_crack(char *pass, int pos, const int len) {
   if (len - pos == 0) { // base case
-    printf("%s\n", pass); // replace with decryption later, return 1 on success
+    fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
     return 0;
   } else {
     if (lalpha_crack(pass, pos + 1, len)) {
