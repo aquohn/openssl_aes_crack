@@ -86,36 +86,28 @@ int main(int argc, char *argv[])
   int bufdone = 0;
 
   char *ct = malloc((ct_size + 1) * sizeof(char));
-  ct[ct_size] = '0';
   char *pt = malloc((ct_size + 1) * sizeof(char));
-  pt[ct_size] = '0';
-  char *ct_fstr = malloc((ct_size + 1) * sizeof(char));
-  sprintf(ct_fstr, " %" _SIZETF "%%s", ct_size);
 
   if (ct_fp != NULL && ct_str != NULL) {
     printf("Please supply only one ciphertext!");
   } else if (ct_fp != NULL) {
-    if (fscanf(ct_fp, ct_fstr, ct) == 0) {
+    if (fgets(ct, ct_size, ct_fp) == NULL) {
       printf("Failed to read ciphertext from file! Error code %d.\n",
           ferror(ct_fp));
-      printf("fscanf: %s\n", ct);
-      fgets(ct, ct_size, ct_fp);
-      printf("fgets: %s\n", ct);
     } else {
       bufdone = 1;
     }
   } else if (ct_str != NULL) {
-    if (sscanf(ct_str, ct_fstr, ct) == 0) {
-      printf("Failed to read ciphertext argument!\n");
-    } else {
+      strncpy(ct, ct_str, ct_size);
       bufdone = 1;
     }
   } else {
     printf("No ciphertext to decrypt!\n");
   }
 
-  free(ct_fstr);
-  if (!bufdone) {
+  if (bufdone) {
+    ct[ct_size] = '0';
+  } else {
     cleanup(ct, pt);
     return 1;
   }
