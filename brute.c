@@ -98,9 +98,8 @@ int main(int argc, char *argv[])
       bufdone = 1;
     }
   } else if (ct_str != NULL) {
-      strncpy(ct, ct_str, ct_size);
-      bufdone = 1;
-    }
+    strncpy(ct, ct_str, ct_size);
+    bufdone = 1;
   } else {
     printf("No ciphertext to decrypt!\n");
   }
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
   char pass[] = {'a', 'a', 'a', 'a', 'a'};
   //lalpha_crack(pass, 5);
 
-  
+
   cleanup(ct, pt);
   return 0;
 }
