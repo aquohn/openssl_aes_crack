@@ -23,8 +23,9 @@
 #endif
 
 int lalpha_crack(char *pass, int pos, const int len, const FILE *out);
+int lalpha_iter_crack(char *pass, const int len, const FILE *out);
 void cleanup(char *ct, char *pt);
-//FILE *out = NULL;
+FILE *out = NULL;
 
 int main(int argc, char *argv[])
 { 
@@ -126,7 +127,12 @@ int main(int argc, char *argv[])
   begin = clock();
   lalpha_crack(pass, 0, 5, out);
   end = clock();
-  printf("Took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
+  printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
+
+  begin = clock();
+  lalpha_iter_crack(pass, 5, out);
+  end = clock();
+  printf("Iteration took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
   fclose(out);
 
   cleanup(ct, pt);
@@ -136,6 +142,7 @@ int main(int argc, char *argv[])
 int lalpha_crack(char *pass, int pos, const int len, const FILE *out) {
   if (len - pos == 0) { // base case
     fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
+    EVP_BytesToKey
     return 0;
   } else {
     if (lalpha_crack(pass, pos + 1, len, out)) {
@@ -148,6 +155,25 @@ int lalpha_crack(char *pass, int pos, const int len, const FILE *out) {
       return lalpha_crack(pass, pos, len, out);
     }
   }
+}
+
+int lalpha_iter_crack(char *pass, const int len, const FILE *out) {
+  for (; pass[0] < 'z' + 1; ++pass[0]) {
+    for (; pass[1] < 'z' + 1; ++pass[1]) {
+      for (; pass[2] < 'z' + 1; ++pass[2]) {
+        for (; pass[3] < 'z' + 1; ++pass[3]) {
+          for (; pass[4] < 'z' + 1; ++pass[4]) {
+            fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
+          }
+          pass[4] = 'a';
+        }
+        pass[3] = 'a';
+      }
+      pass[2] = 'a';
+    }
+    pass[1] = 'a';
+  }
+  return 0;
 }
 
 void cleanup(char *ct, char *pt) {
@@ -165,5 +191,3 @@ void cleanup(char *ct, char *pt) {
   free(ct);
   free(pt);
 }
-
-
