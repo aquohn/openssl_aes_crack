@@ -22,9 +22,9 @@
 #  define _SIZETF "zu"
 #endif
 
-int lalpha_crack(char *pass, int pos, const int len);
+int lalpha_crack(char *pass, int pos, const int len, const FILE *out);
 void cleanup(char *ct, char *pt);
-FILE *out = NULL;
+//FILE *out = NULL;
 
 int main(int argc, char *argv[])
 { 
@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
   }
 
   if (bufdone) {
+    fclose(ct_fp);
     ct[ct_size] = '0';
   } else {
     cleanup(ct, pt);
@@ -120,30 +121,31 @@ int main(int argc, char *argv[])
   /* ... Do some crypto stuff here ... */
 
   char pass[] = {'a', 'a', 'a', 'a', 'a', 0};
-  out = fopen("out.txt", "w");
+  FILE *out = fopen("out.txt", "w");
   clock_t begin, end;
   begin = clock();
-  lalpha_crack(pass, 0, 5);
+  lalpha_crack(pass, 0, 5, out);
   end = clock();
   printf("Took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
+  fclose(out);
 
   cleanup(ct, pt);
   return 0;
 }
 
-int lalpha_crack(char *pass, int pos, const int len) {
+int lalpha_crack(char *pass, int pos, const int len, const FILE *out) {
   if (len - pos == 0) { // base case
     fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
     return 0;
   } else {
-    if (lalpha_crack(pass, pos + 1, len)) {
+    if (lalpha_crack(pass, pos + 1, len, out)) {
       return 1;
     } else if (pass[pos] == 'z') {
       pass[pos] = 'a';     
       return 0;
     } else {
       ++pass[pos];
-      return lalpha_crack(pass, pos, len);
+      return lalpha_crack(pass, pos, len, out);
     }
   }
 }
