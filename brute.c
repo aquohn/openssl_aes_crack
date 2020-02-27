@@ -22,10 +22,13 @@
 #  define _SIZETF "zu"
 #endif
 
-int lalpha_crack(char *pass, int pos, const int len, const FILE *out);
-int lalpha_iter_crack(char *pass, const int len, const FILE *out);
+int lalpha_crack(char *pass, int pos, const int len);
+int lalpha_iter_crack(char *pass, const int len);
 void cleanup(char *ct, char *pt);
+
 FILE *out = NULL;
+char *key = NULL;
+char *iv = NULL;
 
 int main(int argc, char *argv[])
 { 
@@ -122,15 +125,20 @@ int main(int argc, char *argv[])
   /* ... Do some crypto stuff here ... */
 
   char pass[] = {'a', 'a', 'a', 'a', 'a', 0};
-  FILE *out = fopen("out.txt", "w");
+  out = fopen("out.txt", "w");
+  key = malloc(129 * sizeof(char));
+  iv = malloc(129 * sizeof(char));
+  key[129] = 0;
+  iv[129] = 0;
+
   clock_t begin, end;
   begin = clock();
-  lalpha_crack(pass, 0, 5, out);
+  lalpha_crack(pass, 0, 5);
   end = clock();
   printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
 
   begin = clock();
-  lalpha_iter_crack(pass, 5, out);
+  //lalpha_iter_crack(pass, 5);
   end = clock();
   printf("Iteration took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
   fclose(out);
@@ -139,25 +147,25 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-int lalpha_crack(char *pass, int pos, const int len, const FILE *out) {
+int lalpha_crack(char *pass, int pos, const int len) {
   if (len - pos == 0) { // base case
-    fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
-    EVP_BytesToKey
+    //fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
+    EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, pass, 5, 1, key, iv);
     return 0;
   } else {
-    if (lalpha_crack(pass, pos + 1, len, out)) {
+    if (lalpha_crack(pass, pos + 1, len)) {
       return 1;
     } else if (pass[pos] == 'z') {
       pass[pos] = 'a';     
       return 0;
     } else {
       ++pass[pos];
-      return lalpha_crack(pass, pos, len, out);
+      return lalpha_crack(pass, pos, len);
     }
   }
 }
 
-int lalpha_iter_crack(char *pass, const int len, const FILE *out) {
+int lalpha_iter_crack(char *pass, const int len) {
   for (; pass[0] < 'z' + 1; ++pass[0]) {
     for (; pass[1] < 'z' + 1; ++pass[1]) {
       for (; pass[2] < 'z' + 1; ++pass[2]) {
