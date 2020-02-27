@@ -23,7 +23,7 @@
 #endif
 
 int lalpha_crack(char *pass, int pos, const int len);
-int lalpha_iter_crack(char *pass, const int len);
+// int lalpha_iter_crack(char *pass, const int len);
 void cleanup(char *ct, char *pt);
 
 FILE *out = NULL;
@@ -137,20 +137,21 @@ int main(int argc, char *argv[])
   end = clock();
   printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
 
-  begin = clock();
-  //lalpha_iter_crack(pass, 5);
+  /* begin = clock();
+  lalpha_iter_crack(pass, 5);
   end = clock();
   printf("Iteration took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
-  fclose(out);
+  */
 
+  fclose(out);
   cleanup(ct, pt);
   return 0;
 }
 
 int lalpha_crack(char *pass, int pos, const int len) {
   if (len - pos == 0) { // base case
-    //fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
-    EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, pass, 5, 1, key, iv);
+    EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
+        (unsigned char *) pass, 5, 1, (unsigned char *) key, (unsigned char *) iv);
     return 0;
   } else {
     if (lalpha_crack(pass, pos + 1, len)) {
@@ -165,13 +166,17 @@ int lalpha_crack(char *pass, int pos, const int len) {
   }
 }
 
+/* May be slightly faster but commenting out because it's ugly
+
 int lalpha_iter_crack(char *pass, const int len) {
   for (; pass[0] < 'z' + 1; ++pass[0]) {
     for (; pass[1] < 'z' + 1; ++pass[1]) {
       for (; pass[2] < 'z' + 1; ++pass[2]) {
         for (; pass[3] < 'z' + 1; ++pass[3]) {
           for (; pass[4] < 'z' + 1; ++pass[4]) {
-            fprintf(out, "%s\n", pass); // replace with decryption later, return 1 on success
+            EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
+                (unsigned char *) pass, 5, 1, (unsigned char *) key, 
+                (unsigned char *) iv);
           }
           pass[4] = 'a';
         }
@@ -182,7 +187,7 @@ int lalpha_iter_crack(char *pass, const int len) {
     pass[1] = 'a';
   }
   return 0;
-}
+} */
 
 void cleanup(char *ct, char *pt) {
   /* Clean up */
