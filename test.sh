@@ -1,6 +1,6 @@
 #!/bin/sh
 
-gcc brute.c -Wall -o brute.exe -lcrypto
+gcc brute.c -Wall -o brute.exe -lcrypto -std=c99
 
 echo
 ./brute.exe -f flag.txt.enc

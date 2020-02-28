@@ -22,6 +22,7 @@
 #  define _SIZETF "zu"
 #endif
 
+int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv);
 int lalpha_crack(char *pass, int pos, const int len);
 // int lalpha_iter_crack(char *pass, const int len);
 void cleanup(char *ct, char *pt);
@@ -30,8 +31,7 @@ FILE *out = NULL;
 char *key = NULL;
 char *iv = NULL;
 
-int main(int argc, char *argv[])
-{ 
+int main(int argc, char *argv[]) { 
   /* Load the human readable error strings for libcrypto */
   ERR_load_crypto_strings();
 
@@ -47,24 +47,38 @@ int main(int argc, char *argv[])
 
   char *ct = NULL;
   char *pt = NULL;
-  size_t *ct_size;
-  *ct_size = 1024;
+  size_t _ct_size = 1024;
+  size_t *ct_size = &_ct_size;
   if (!buffer_setup(ct, pt, ct_size, argc, argv)) {
     cleanup(ct, pt);
     return 1;
   }
-  
-  printf("Buffer setup done\n");
 
+  printf("Buffer setup done\n");
 
   /* ... Do some crypto stuff here ... */
 
-  char pass[] = {'a', 'a', 'a', 'a', 'a'};
-  lalpha_crack(pass, 5, 5);
+  char pass[] = {'a', 'a', 'a', 'a', 'a', 0};
+  out = fopen("out.txt", "w");
+  key = malloc(129 * sizeof(char));
+  iv = malloc(129 * sizeof(char));
+  key[129] = 0;
+  iv[129] = 0;
 
+  clock_t begin, end;
+  begin = clock();
+  lalpha_crack(pass, 0, 5);
+  end = clock();
+  printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
 
+  /* begin = clock();
+     lalpha_iter_crack(pass, 5);
+     end = clock();
+     printf("Iteration took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
+     */
+
+  fclose(out);
   cleanup(ct, pt);
-  return 0;
 }
 
 int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
@@ -129,7 +143,7 @@ int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
       bufdone = 1;
     }
   } else if (ct_str != NULL) {
-    strncpy(ct, ct_str, ct_size);
+    strncpy(ct, ct_str, *ct_size);
     bufdone = 1;
   } else {
     printf("No ciphertext to decrypt!\n");
@@ -137,39 +151,11 @@ int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
 
   if (bufdone) {
     fclose(ct_fp);
-    ct[ct_size] = '0';
+    ct[*ct_size] = '0';
   } else {
     cleanup(ct, pt);
-    return 0;
   }
-}
-
-  printf("Buffer setup done\n");
-
-  /* ... Do some crypto stuff here ... */
-
-  char pass[] = {'a', 'a', 'a', 'a', 'a', 0};
-  out = fopen("out.txt", "w");
-  key = malloc(129 * sizeof(char));
-  iv = malloc(129 * sizeof(char));
-  key[129] = 0;
-  iv[129] = 0;
-
-  clock_t begin, end;
-  begin = clock();
-  lalpha_crack(pass, 0, 5);
-  end = clock();
-  printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
-
-  /* begin = clock();
-  lalpha_iter_crack(pass, 5);
-  end = clock();
-  printf("Iteration took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
-  */
-
-  fclose(out);
-  cleanup(ct, pt);
-  return 0;
+  return bufdone;
 }
 
 int lalpha_crack(char *pass, int pos, const int len) {
@@ -192,26 +178,26 @@ int lalpha_crack(char *pass, int pos, const int len) {
 
 /* May be slightly faster but commenting out because it's ugly
 
-int lalpha_iter_crack(char *pass, const int len) {
-  for (; pass[0] < 'z' + 1; ++pass[0]) {
-    for (; pass[1] < 'z' + 1; ++pass[1]) {
-      for (; pass[2] < 'z' + 1; ++pass[2]) {
-        for (; pass[3] < 'z' + 1; ++pass[3]) {
-          for (; pass[4] < 'z' + 1; ++pass[4]) {
-            EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
-                (unsigned char *) pass, 5, 1, (unsigned char *) key, 
-                (unsigned char *) iv);
-          }
-          pass[4] = 'a';
-        }
-        pass[3] = 'a';
-      }
-      pass[2] = 'a';
-    }
-    pass[1] = 'a';
-  }
-  return 0;
-} */
+   int lalpha_iter_crack(char *pass, const int len) {
+   for (; pass[0] < 'z' + 1; ++pass[0]) {
+   for (; pass[1] < 'z' + 1; ++pass[1]) {
+   for (; pass[2] < 'z' + 1; ++pass[2]) {
+   for (; pass[3] < 'z' + 1; ++pass[3]) {
+   for (; pass[4] < 'z' + 1; ++pass[4]) {
+   EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
+   (unsigned char *) pass, 5, 1, (unsigned char *) key, 
+   (unsigned char *) iv);
+   }
+   pass[4] = 'a';
+   }
+   pass[3] = 'a';
+   }
+   pass[2] = 'a';
+   }
+   pass[1] = 'a';
+   }
+   return 0;
+   } */
 
 void cleanup(char *ct, char *pt) {
   /* Clean up */
