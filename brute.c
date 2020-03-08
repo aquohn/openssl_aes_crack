@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   /* ... Do some crypto stuff here ... */
 
-  char pass[] = {'a', 'a', 'a', 'a', 'a', 0};
+  char pass[] = "aaaaa";
   out = fopen("out.txt", "w");
   key = malloc(129 * sizeof(char));
   iv = malloc(129 * sizeof(char));
@@ -162,6 +162,7 @@ int lalpha_crack(char *pass, int pos, const int len) {
   if (len - pos == 0) { // base case
     EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
         (unsigned char *) pass, 5, 1, (unsigned char *) key, (unsigned char *) iv);
+    // fprintf(out, "%s\n", pass);
     return 0;
   } else {
     if (lalpha_crack(pass, pos + 1, len)) {
