@@ -22,9 +22,12 @@
 #  define _SIZETF "zu"
 #endif
 
+#define FULL_UCHAR 255
+
 int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv);
 int lalpha_crack(char *pass, int pos, const int len);
 // int lalpha_iter_crack(char *pass, const int len);
+size_t decode_b64(const char *msg, char **res, size_t len);
 void cleanup(char *ct, char *pt);
 
 FILE *out = NULL;
@@ -119,8 +122,8 @@ int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
       case '?':
         printf("Use -c to supply a base64 ciphertext or -f to specify a file"
             " containing a base64 ciphertext, and use -s to specify the size of"
-            " the ciphertext (default 1MB). Only the first line is read from a"
-            " file.\n");
+            " the ciphertext in bytes, (default 1MB). Only the first line is "
+            " read from a file.\n");
         break;
     }
   }
@@ -162,6 +165,7 @@ int lalpha_crack(char *pass, int pos, const int len) {
   if (len - pos == 0) { // base case
     EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
         (unsigned char *) pass, 5, 1, (unsigned char *) key, (unsigned char *) iv);
+
     // fprintf(out, "%s\n", pass);
     return 0;
   } else {
@@ -199,6 +203,41 @@ int lalpha_crack(char *pass, int pos, const int len) {
    }
    return 0;
    } */
+
+/**
+ * Decodes a byte string from base64 format.
+ *
+ * @param[in] msg The base64 string to decode.
+ * @param[out] res The buffer to store the decoded result in. THE CALLER IS IN
+ * CHARGE OF FREEING THIS MEMORY.
+ * @param[in] len The length of msg, as returned by strlen().
+ * @return The length of the decoded result, as returned by strlen().
+ */
+
+size_t decode_b64(const char *msg, char **res, size_t len) {
+  /* algo should work for non-8-bit chars, but just in case */
+  /*if (CHAR_BIT != 8) {
+    *res = NULL;
+    printf("Only 8-bit characters supported!\n");
+    return 0;
+  }*/
+  size_t dec_len = 3 * ((len - 1) / 4);
+  char *temp = malloc((dec_len + 1) * sizeof(char));
+  temp[dec_len] = 0;
+  size_t rem = 0;
+
+  /* account for padding */
+  if (msg[len - 1] == '=') {
+    ++rem;
+    --dec_len;
+    if (msg[len - 2] == '=') {
+      ++rem;
+      --dec_len;
+    } 
+  }
+
+  return dec_len;
+} 
 
 void cleanup(char *ct, char *pt) {
   /* Clean up */
