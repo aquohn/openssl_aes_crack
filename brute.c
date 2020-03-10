@@ -25,14 +25,12 @@
 #define FULL_UCHAR 255
 
 int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv);
-int lalpha_crack(char *pass, int pos, const int len);
-// int lalpha_iter_crack(char *pass, const int len);
+int lalpha_crack(char *pass, int pos, const int len, char *key, char *iv);
+// int lalpha_iter_crack(char *pass, const int len, char *key, char *iv);
 size_t decode_b64(const char *msg, unsigned char **res, size_t len);
 void cleanup(char *ct, char *pt);
 
 FILE *out = NULL;
-char *key = NULL;
-char *iv = NULL;
 
 int main(int argc, char *argv[]) { 
   /* Load the human readable error strings for libcrypto */
@@ -63,14 +61,14 @@ int main(int argc, char *argv[]) {
 
   char pass[] = "aaaaa";
   out = fopen("out.txt", "w");
-  key = malloc(129 * sizeof(char));
-  iv = malloc(129 * sizeof(char));
+  char *key = malloc(129 * sizeof(char));
+  char *iv = malloc(129 * sizeof(char));
   key[129] = 0;
   iv[129] = 0;
 
   clock_t begin, end;
   begin = clock();
-  //lalpha_crack(pass, 0, 5);
+  lalpha_crack(pass, 0, 5, key, iv);
   end = clock();
   printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
 
@@ -88,8 +86,9 @@ int main(int argc, char *argv[]) {
      printf("Iteration took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
      */
 
-  fclose(out);
-  cleanup(ct, pt);
+  free(key);
+  free(iv);
+  cleanup(ct, pt); // TODO: make variadic (because why not?)
 }
 
 int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
@@ -169,7 +168,7 @@ int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
   return bufdone;
 }
 
-int lalpha_crack(char *pass, int pos, const int len) {
+int lalpha_crack(char *pass, int pos, const int len, char *key, char *iv) {
   if (len - pos == 0) { // base case
     EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha256(), NULL, 
         (unsigned char *) pass, 5, 1, (unsigned char *) key, (unsigned char *) iv);
@@ -177,21 +176,21 @@ int lalpha_crack(char *pass, int pos, const int len) {
     // fprintf(out, "%s\n", pass);
     return 0;
   } else {
-    if (lalpha_crack(pass, pos + 1, len)) {
+    if (lalpha_crack(pass, pos + 1, len, key, iv)) {
       return 1;
     } else if (pass[pos] == 'z') {
       pass[pos] = 'a';     
       return 0;
     } else {
       ++pass[pos];
-      return lalpha_crack(pass, pos, len);
+      return lalpha_crack(pass, pos, len, key, iv);
     }
   }
 }
 
 /* May be slightly faster but commenting out because it's ugly
 
-   int lalpha_iter_crack(char *pass, const int len) {
+   int lalpha_iter_crack(char *pass, const int len, char *key, char *iv) {
    for (; pass[0] < 'z' + 1; ++pass[0]) {
    for (; pass[1] < 'z' + 1; ++pass[1]) {
    for (; pass[2] < 'z' + 1; ++pass[2]) {
@@ -270,4 +269,5 @@ void cleanup(char *ct, char *pt) {
 
   if (ct) free(ct);
   if (pt) free(pt);
+  fclose(out); // TODO: check if closed
 }
