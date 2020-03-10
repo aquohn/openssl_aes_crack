@@ -27,7 +27,7 @@
 int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv);
 int lalpha_crack(char *pass, int pos, const int len);
 // int lalpha_iter_crack(char *pass, const int len);
-size_t decode_b64(const char *msg, char **res, size_t len);
+size_t decode_b64(const char *msg, unsigned char **res, size_t len);
 void cleanup(char *ct, char *pt);
 
 FILE *out = NULL;
@@ -214,7 +214,7 @@ int lalpha_crack(char *pass, int pos, const int len) {
  * @return The length of the decoded result, as returned by strlen().
  */
 
-size_t decode_b64(const char *msg, char **res, size_t len) {
+size_t decode_b64(const char *msg, unsigned char **res, size_t len) {
   /* algo should work for non-8-bit chars, but just in case */
   /*if (CHAR_BIT != 8) {
     *res = NULL;
@@ -222,20 +222,18 @@ size_t decode_b64(const char *msg, char **res, size_t len) {
     return 0;
   }*/
   size_t dec_len = 3 * ((len - 1) / 4);
-  char *temp = malloc((dec_len + 1) * sizeof(char));
-  temp[dec_len] = 0;
-  size_t rem = 0;
+  unsigned char *dec_buf = malloc((dec_len + 1) * sizeof(unsigned char));
+  dec_buf[dec_len] = 0;
 
   /* account for padding */
   if (msg[len - 1] == '=') {
-    ++rem;
     --dec_len;
     if (msg[len - 2] == '=') {
-      ++rem;
       --dec_len;
     } 
   }
 
+  *res = dec_buf;
   return dec_len;
 } 
 
