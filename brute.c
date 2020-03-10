@@ -154,7 +154,7 @@ int buffer_setup(char *ct, char *pt, size_t *ct_size, int argc, char** argv) {
 
   if (bufdone) {
     fclose(ct_fp);
-    ct[*ct_size] = '0';
+    ct[*ct_size] = 0;
   } else {
     cleanup(ct, pt);
   }
@@ -221,10 +221,8 @@ size_t decode_b64(const char *msg, unsigned char **res, size_t len) {
     printf("Only 8-bit characters supported!\n");
     return 0;
   }*/
-  size_t dec_len = 3 * ((len - 1) / 4);
-  unsigned char *dec_buf = malloc((dec_len + 1) * sizeof(unsigned char));
-  dec_buf[dec_len] = 0;
 
+  size_t dec_len = 3 * (len / 4);
   /* account for padding */
   if (msg[len - 1] == '=') {
     --dec_len;
@@ -232,9 +230,17 @@ size_t decode_b64(const char *msg, unsigned char **res, size_t len) {
       --dec_len;
     } 
   }
+  unsigned char *dec_buf = malloc((dec_len + 1) * sizeof(unsigned char));
+  dec_buf[dec_len] = 0;
+
+  BIO *msg_bio, *b64_bio;
+  msg_bio = BIO_new_mem_buf(msg, len + 1);
+  b64_bio = BIO_new(BIO_f_base64());
+  msg_bio = BIO_push(b64_bio, msg_bio);
+  size_t succ_len = BIO_read(msg_bio, dec_buf, len);
 
   *res = dec_buf;
-  return dec_len;
+  return succ_len;
 } 
 
 void cleanup(char *ct, char *pt) {
