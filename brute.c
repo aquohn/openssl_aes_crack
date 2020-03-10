@@ -70,9 +70,16 @@ int main(int argc, char *argv[]) {
 
   clock_t begin, end;
   begin = clock();
-  lalpha_crack(pass, 0, 5);
+  //lalpha_crack(pass, 0, 5);
   end = clock();
   printf("Recursion took %lf seconds!\n", ((double) end - begin) / CLOCKS_PER_SEC);
+
+  char test[] = "aGVsbG8gd29ybGQ=";
+  unsigned char *test_ptr = NULL;
+  printf("Converted %" _SIZETF " characters\n", decode_b64(test, &test_ptr,
+        strlen(test)));
+  printf("%s\n", test_ptr);
+  free(test_ptr);
 
   /* begin = clock();
      lalpha_iter_crack(pass, 5);
@@ -230,6 +237,9 @@ size_t decode_b64(const char *msg, unsigned char **res, size_t len) {
       --dec_len;
     } 
   }
+
+  printf("Message: %s\n", msg);
+  printf("Decode Length: %" _SIZETF "\n", dec_len);
   unsigned char *dec_buf = malloc((dec_len + 1) * sizeof(unsigned char));
   dec_buf[dec_len] = 0;
 
@@ -238,6 +248,7 @@ size_t decode_b64(const char *msg, unsigned char **res, size_t len) {
   b64_bio = BIO_new(BIO_f_base64());
   msg_bio = BIO_push(b64_bio, msg_bio);
   size_t succ_len = BIO_read(msg_bio, dec_buf, len);
+  BIO_free_all(msg_bio);
 
   *res = dec_buf;
   return succ_len;
